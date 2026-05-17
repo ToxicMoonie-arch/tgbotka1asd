@@ -31,33 +31,28 @@ cities = {
                  "Товар 5": 8075, "Товар 6": 17475, "Товар 7": 4500, "Товар 8": 8525},
 }
 
-# Оптовые товары: цена за грамм в рублях
-wholesale_products = {
-    "Товар 1": 5500,
-    "Товар 2": 3000,
-    "Товар 3": 3000,
-    "Товар 4": 1650,
-    "Товар 5": 8050,
-    "Товар 6": 17500,
-    "Товар 7": 4550,
-    "Товар 8": 8500,
+# Оптовые типы товаров:
+# Товар 10 = Товар 1 (1г) + Товар 2 (0.5г) → цена с Товара 1 → 5500 ₽/г
+# Товар 11 = Товар 3 (1г) + Товар 4 (0.5г) → цена с Товара 3 → 3000 ₽/г
+# Товар 12 = Товар 5 (2г) + Товар 6 (5г)   → среднее (4025+3500)/2 = 3762 ₽/г
+# Товар 13 = Товар 7 (1г) + Товар 8 (2г)   → среднее (4550+4250)/2 = 4400 ₽/г
+wholesale_types = {
+    "Товар 10": 5500,
+    "Товар 11": 3000,
+    "Товар 12": round((8050/2 + 17500/5) / 2),   # среднее по граммам
+    "Товар 13": round((4550/1 + 8500/2) / 2),     # среднее по граммам
 }
 
-# Минимальное количество граммов для опта
-WHOLESALE_MIN_GRAMS = 1
+wholesale_index = {i: name for i, name in enumerate(wholesale_types)}
 
 city_index = {i: city for i, city in enumerate(cities)}
-city_reverse = {city: i for i, city in enumerate(cities)}
-wholesale_index = {i: product for i, product in enumerate(wholesale_products)}
 
 pending_orders = {}
 user_to_admin_message = {}
 admin_message_to_user = {}
 active_chats = set()
 used_order_numbers = set()
-
-# Состояния для оптовых заказов
-wholesale_state = {}  # user_id -> {"product": str, "price_per_gram": int}
+wholesale_state = {}  # user_id -> dict для ввода своего кол-ва
 
 
 def generate_order_number():
@@ -71,18 +66,13 @@ def generate_order_number():
 # ─── Клавиатуры ────────────────────────────────────────────────────────────────
 
 def main_keyboard():
-    """Главное меню с городами, оптом и поддержкой."""
-    city_buttons = [
+    buttons = [
         [InlineKeyboardButton(text=f"📍 {city}", callback_data=f"c_{i}")]
         for i, city in city_index.items()
     ]
-    city_buttons.append(
-        [InlineKeyboardButton(text="📦 Оптовая покупка", callback_data="wholesale")]
-    )
-    city_buttons.append(
-        [InlineKeyboardButton(text="💬 Поддержка (лайв-чат)", callback_data="support")]
-    )
-    return InlineKeyboardMarkup(inline_keyboard=city_buttons)
+    buttons.append([InlineKeyboardButton(text="📦 Оптовая покупка", callback_data="wholesale")])
+    buttons.append([InlineKeyboardButton(text="💬 Поддержка (лайв-чат)", callback_data="support")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 def products_keyboard(city_i: int):
@@ -108,32 +98,51 @@ def payment_keyboard(city_i: int):
     )
 
 
-def wholesale_products_keyboard():
-    """Список товаров для оптовой покупки."""
+def wholesale_region_keyboard():
     buttons = [
-        [InlineKeyboardButton(
-            text=f"{product} — {price} ₽/г",
-            callback_data=f"ws_p_{i}"
-        )]
-        for i, (product, price) in enumerate(wholesale_products.items())
+        [InlineKeyboardButton(text=f"📍 {city}", callback_data=f"ws_city_{i}")]
+        for i, city in city_index.items()
     ]
     buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="back_cities")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def wholesale_grams_keyboard(product_i: int):
-    """Выбор количества граммов."""
-    gram_options = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+def wholesale_products_keyboard(city_i: int):
     buttons = [
         [InlineKeyboardButton(
-            text=f"{g} г",
-            callback_data=f"ws_g_{product_i}_{g}"
+            text=f"{name} — {ppg} ₽/г",
+            callback_data=f"ws_p_{city_i}_{i}"
         )]
-        for g in gram_options
+        for i, (name, ppg) in enumerate(wholesale_types.items())
     ]
-    buttons.append([InlineKeyboardButton(text="✏️ Ввести своё количество", callback_data=f"ws_custom_{product_i}")])
-    buttons.append([InlineKeyboardButton(text="◀️ Назад к товарам", callback_data="wholesale")])
+    buttons.append([InlineKeyboardButton(text="◀️ Назад к регионам", callback_data="wholesale")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def wholesale_amounts_keyboard(city_i: int, product_i: int):
+    """Кнопки 1–10г, по 5 в ряд."""
+    options = list(range(1, 11))
+    rows = []
+    row = []
+    for opt in options:
+        row.append(InlineKeyboardButton(
+            text=f"{opt}г",
+            callback_data=f"ws_g_{city_i}_{product_i}_{opt}"
+        ))
+        if len(row) == 5:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    rows.append([InlineKeyboardButton(
+        text="✏️ Ввести своё количество",
+        callback_data=f"ws_custom_{city_i}_{product_i}"
+    )])
+    rows.append([InlineKeyboardButton(
+        text="◀️ Назад к товарам",
+        callback_data=f"ws_city_{city_i}"
+    )])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def wholesale_payment_keyboard():
@@ -184,17 +193,15 @@ async def back_to_products(callback: CallbackQuery):
     await callback.answer()
 
 
-# ─── Города и товары ───────────────────────────────────────────────────────────
+# ─── Розничные города и товары ─────────────────────────────────────────────────
 
 @dp.callback_query(F.data.startswith("c_"))
 async def city_handler(callback: CallbackQuery):
     city_i = int(callback.data.removeprefix("c_"))
     city = city_index.get(city_i)
-
     if not city:
         await callback.answer("Город не найден.", show_alert=True)
         return
-
     await callback.message.edit_text(
         f"Вы выбрали: 📍 {city}\n\nТеперь выберите товар:",
         reply_markup=products_keyboard(city_i)
@@ -245,21 +252,18 @@ async def product_handler(callback: CallbackQuery):
     await callback.answer()
 
 
-# ─── Поддержка (лайв-чат) ──────────────────────────────────────────────────────
+# ─── Поддержка ─────────────────────────────────────────────────────────────────
 
 @dp.callback_query(F.data == "support")
 async def support_handler(callback: CallbackQuery):
     user_id = callback.from_user.id
     active_chats.add(user_id)
-
     await callback.message.edit_text(
         "💬 Вы подключились к чату поддержки.\n\n"
         "Напишите ваш вопрос, и наш оператор ответит вам в ближайшее время.\n\n"
         "Мы работаем ежедневно и стараемся отвечать как можно быстрее 🕐",
         reply_markup=support_keyboard()
     )
-
-    # Уведомить администратора
     await bot.send_message(
         chat_id=ADMIN_ID,
         text=(
@@ -272,60 +276,87 @@ async def support_handler(callback: CallbackQuery):
     await callback.answer()
 
 
-# ─── Оптовая покупка ───────────────────────────────────────────────────────────
+# ─── Опт: шаг 1 — регион ──────────────────────────────────────────────────────
 
 @dp.callback_query(F.data == "wholesale")
 async def wholesale_handler(callback: CallbackQuery):
     await callback.message.edit_text(
-        f"📦 Оптовая покупка\n\n"
-        f"Минимальный заказ: {WHOLESALE_MIN_GRAMS} г\n"
-        f"Цена указана за 1 грамм.\n\n"
-        f"Выберите товар:",
-        reply_markup=wholesale_products_keyboard()
+        "📦 Оптовая покупка\n\n"
+        "Выберите ваш регион:",
+        reply_markup=wholesale_region_keyboard()
     )
     await callback.answer()
 
+
+# ─── Опт: шаг 2 — товар ───────────────────────────────────────────────────────
+
+@dp.callback_query(F.data.startswith("ws_city_"))
+async def wholesale_city_handler(callback: CallbackQuery):
+    city_i = int(callback.data.removeprefix("ws_city_"))
+    city = city_index.get(city_i)
+    if not city:
+        await callback.answer("Регион не найден.", show_alert=True)
+        return
+    await callback.message.edit_text(
+        f"📦 Оптовая покупка\n"
+        f"📍 Регион: {city}\n\n"
+        f"Выберите товар (цена за 1 грамм):",
+        reply_markup=wholesale_products_keyboard(city_i)
+    )
+    await callback.answer()
+
+
+# ─── Опт: шаг 3 — количество граммов ─────────────────────────────────────────
 
 @dp.callback_query(F.data.startswith("ws_p_"))
 async def wholesale_product_handler(callback: CallbackQuery):
-    product_i = int(callback.data.removeprefix("ws_p_"))
+    parts = callback.data.split("_")
+    city_i = int(parts[2])
+    product_i = int(parts[3])
+
+    city = city_index.get(city_i)
     product = wholesale_index.get(product_i)
-    if not product:
-        await callback.answer("Товар не найден.", show_alert=True)
+    if not city or not product:
+        await callback.answer("Не найдено.", show_alert=True)
         return
 
-    price_per_gram = wholesale_products[product]
+    ppg = wholesale_types[product]
 
     await callback.message.edit_text(
-        f"📦 Оптовая покупка\n\n"
+        f"📦 Оптовая покупка\n"
+        f"📍 Регион: {city}\n"
         f"🛒 {product}\n"
-        f"💰 Цена: {price_per_gram} ₽ за грамм\n\n"
+        f"💰 Цена: {ppg} ₽/г\n\n"
         f"Выберите количество граммов:",
-        reply_markup=wholesale_grams_keyboard(product_i)
+        reply_markup=wholesale_amounts_keyboard(city_i, product_i)
     )
     await callback.answer()
 
 
+# ─── Опт: шаг 4 — оформление (кнопка) ────────────────────────────────────────
+
 @dp.callback_query(F.data.startswith("ws_g_"))
 async def wholesale_grams_handler(callback: CallbackQuery):
-    # ws_g_{product_i}_{grams}
     parts = callback.data.split("_")
-    product_i = int(parts[2])
-    grams = int(parts[3])
+    city_i = int(parts[2])
+    product_i = int(parts[3])
+    grams = int(parts[4])
 
+    city = city_index.get(city_i)
     product = wholesale_index.get(product_i)
-    if not product:
-        await callback.answer("Товар не найден.", show_alert=True)
+    if not city or not product:
+        await callback.answer("Не найдено.", show_alert=True)
         return
 
-    price_per_gram = wholesale_products[product]
-    total = price_per_gram * grams
+    ppg = wholesale_types[product]
+    total = ppg * grams
     order_number = generate_order_number()
 
     pending_orders[callback.from_user.id] = {
+        "city": city,
         "product": product,
         "grams": grams,
-        "price_per_gram": price_per_gram,
+        "price_per_gram": ppg,
         "price": total,
         "username": callback.from_user.username or "без username",
         "full_name": callback.from_user.full_name,
@@ -336,8 +367,9 @@ async def wholesale_grams_handler(callback: CallbackQuery):
     await callback.message.edit_text(
         f"📦 Оптовый заказ номер: #{order_number}\n\n"
         f"🛒 {product}\n"
+        f"📍 Регион: {city}\n"
         f"⚖️ Количество: {grams} г\n"
-        f"💰 Цена за грамм: {price_per_gram} ₽\n"
+        f"💰 Цена за грамм: {ppg} ₽\n"
         f"💵 Итого к оплате: {total} ₽\n\n"
         f"Переведите {total} ₽ на карту:\n"
         f"2200701356924784 Т-Банк\n\n"
@@ -347,55 +379,61 @@ async def wholesale_grams_handler(callback: CallbackQuery):
     await callback.answer()
 
 
+# ─── Опт: своё количество ─────────────────────────────────────────────────────
+
 @dp.callback_query(F.data.startswith("ws_custom_"))
 async def wholesale_custom_handler(callback: CallbackQuery):
-    product_i = int(callback.data.removeprefix("ws_custom_"))
+    parts = callback.data.split("_")
+    city_i = int(parts[2])
+    product_i = int(parts[3])
+
+    city = city_index.get(city_i)
     product = wholesale_index.get(product_i)
-    if not product:
-        await callback.answer("Товар не найден.", show_alert=True)
+    if not city or not product:
+        await callback.answer("Не найдено.", show_alert=True)
         return
 
-    price_per_gram = wholesale_products[product]
-
+    ppg = wholesale_types[product]
     wholesale_state[callback.from_user.id] = {
+        "city": city,
+        "city_i": city_i,
         "product": product,
-        "price_per_gram": price_per_gram,
         "product_i": product_i,
+        "price_per_gram": ppg,
     }
 
     await callback.message.edit_text(
-        f"📦 {product} — {price_per_gram} ₽/г\n\n"
-        f"✏️ Введите желаемое количество граммов (минимум {WHOLESALE_MIN_GRAMS} г):"
+        f"📦 {product} — {ppg} ₽/г\n"
+        f"📍 Регион: {city}\n\n"
+        f"✏️ Введите желаемое количество граммов (целое число, минимум 1):"
     )
     await callback.answer()
 
 
-# ─── Обработчик текста (для пользователей) ────────────────────────────────────
+# ─── Текстовые сообщения пользователей ────────────────────────────────────────
 
 @dp.message(F.chat.id != ADMIN_ID)
 async def user_message_handler(message: Message):
     user_id = message.from_user.id
 
-    # Ввод граммов для оптового заказа
     if user_id in wholesale_state and message.text:
         state = wholesale_state[user_id]
         try:
             grams = int(message.text.strip())
-            if grams < WHOLESALE_MIN_GRAMS:
-                await message.answer(f"❌ Минимальный заказ — {WHOLESALE_MIN_GRAMS} г. Введите снова:")
+            if grams < 1:
+                await message.answer("❌ Минимум 1 грамм. Введите снова:")
                 return
 
-            product = state["product"]
-            price_per_gram = state["price_per_gram"]
-            total = price_per_gram * grams
+            ppg = state["price_per_gram"]
+            total = ppg * grams
             order_number = generate_order_number()
-
             del wholesale_state[user_id]
 
             pending_orders[user_id] = {
-                "product": product,
+                "city": state["city"],
+                "product": state["product"],
                 "grams": grams,
-                "price_per_gram": price_per_gram,
+                "price_per_gram": ppg,
                 "price": total,
                 "username": message.from_user.username or "без username",
                 "full_name": message.from_user.full_name,
@@ -405,9 +443,10 @@ async def user_message_handler(message: Message):
 
             await message.answer(
                 f"📦 Оптовый заказ номер: #{order_number}\n\n"
-                f"🛒 {product}\n"
+                f"🛒 {state['product']}\n"
+                f"📍 Регион: {state['city']}\n"
                 f"⚖️ Количество: {grams} г\n"
-                f"💰 Цена за грамм: {price_per_gram} ₽\n"
+                f"💰 Цена за грамм: {ppg} ₽\n"
                 f"💵 Итого к оплате: {total} ₽\n\n"
                 f"Переведите {total} ₽ на карту:\n"
                 f"2200701356924784 Т-Банк\n\n"
@@ -415,20 +454,17 @@ async def user_message_handler(message: Message):
                 reply_markup=wholesale_payment_keyboard()
             )
         except ValueError:
-            await message.answer("❌ Введите целое число (например: 50):")
+            await message.answer("❌ Введите целое число (например: 15):")
         return
 
-    # Обычное сообщение в чат поддержки
     if user_id not in active_chats:
         return
 
     text = message.text or message.caption or ""
-
     forwarded = await bot.send_message(
         chat_id=ADMIN_ID,
         text=f"💬 {message.from_user.full_name} (@{message.from_user.username or 'без username'}, ID: {user_id}):\n\n{text}"
     )
-
     user_to_admin_message[user_id] = forwarded.message_id
     admin_message_to_user[forwarded.message_id] = user_id
 
@@ -443,36 +479,32 @@ async def photo_handler(message: Message):
         order = pending_orders.pop(user_id)
         active_chats.add(user_id)
 
-        if order.get("type") == "wholesale":
-            order_info = (
+        if order["type"] == "wholesale":
+            caption = (
                 f"🔔 Новый ОПТОВЫЙ заказ!\n"
                 f"Заказ номер: #{order['order_number']}\n\n"
-                f"👤 Покупатель: {order['full_name']} (@{order['username']})\n"
+                f"👤 {order['full_name']} (@{order['username']})\n"
                 f"🆔 ID: {user_id}\n"
+                f"📍 Регион: {order['city']}\n"
                 f"🛒 Товар: {order['product']}\n"
                 f"⚖️ Количество: {order['grams']} г\n"
                 f"💰 Цена за грамм: {order['price_per_gram']} ₽\n"
                 f"💵 Итого: {order['price']} ₽\n\n"
-                f"💬 Отвечайте reply на любое сообщение покупателя"
+                f"💬 Отвечайте reply на сообщения покупателя"
             )
         else:
-            order_info = (
+            caption = (
                 f"🔔 Новый заказ!\n"
                 f"Заказ номер: #{order['order_number']}\n\n"
-                f"👤 Покупатель: {order['full_name']} (@{order['username']})\n"
+                f"👤 {order['full_name']} (@{order['username']})\n"
                 f"🆔 ID: {user_id}\n"
                 f"📍 Город: {order['city']}\n"
                 f"🛒 Товар: {order['product']}\n"
                 f"💰 Сумма: {order['price']} ₽\n\n"
-                f"💬 Отвечайте reply на любое сообщение покупателя"
+                f"💬 Отвечайте reply на сообщения покупателя"
             )
 
-        sent = await bot.send_photo(
-            chat_id=ADMIN_ID,
-            photo=message.photo[-1].file_id,
-            caption=order_info,
-        )
-
+        sent = await bot.send_photo(chat_id=ADMIN_ID, photo=message.photo[-1].file_id, caption=caption)
         user_to_admin_message[user_id] = sent.message_id
         admin_message_to_user[sent.message_id] = user_id
 
@@ -505,36 +537,32 @@ async def document_handler(message: Message):
         order = pending_orders.pop(user_id)
         active_chats.add(user_id)
 
-        if order.get("type") == "wholesale":
-            order_info = (
+        if order["type"] == "wholesale":
+            caption = (
                 f"🔔 Новый ОПТОВЫЙ заказ!\n"
                 f"Заказ номер: #{order['order_number']}\n\n"
-                f"👤 Покупатель: {order['full_name']} (@{order['username']})\n"
+                f"👤 {order['full_name']} (@{order['username']})\n"
                 f"🆔 ID: {user_id}\n"
+                f"📍 Регион: {order['city']}\n"
                 f"🛒 Товар: {order['product']}\n"
                 f"⚖️ Количество: {order['grams']} г\n"
                 f"💰 Цена за грамм: {order['price_per_gram']} ₽\n"
                 f"💵 Итого: {order['price']} ₽\n\n"
-                f"💬 Отвечайте reply на любое сообщение покупателя"
+                f"💬 Отвечайте reply на сообщения покупателя"
             )
         else:
-            order_info = (
+            caption = (
                 f"🔔 Новый заказ!\n"
                 f"Заказ номер: #{order['order_number']}\n\n"
-                f"👤 Покупатель: {order['full_name']} (@{order['username']})\n"
+                f"👤 {order['full_name']} (@{order['username']})\n"
                 f"🆔 ID: {user_id}\n"
                 f"📍 Город: {order['city']}\n"
                 f"🛒 Товар: {order['product']}\n"
                 f"💰 Сумма: {order['price']} ₽\n\n"
-                f"💬 Отвечайте reply на любое сообщение покупателя"
+                f"💬 Отвечайте reply на сообщения покупателя"
             )
 
-        sent = await bot.send_document(
-            chat_id=ADMIN_ID,
-            document=message.document.file_id,
-            caption=order_info,
-        )
-
+        sent = await bot.send_document(chat_id=ADMIN_ID, document=message.document.file_id, caption=caption)
         user_to_admin_message[user_id] = sent.message_id
         admin_message_to_user[sent.message_id] = user_id
 
