@@ -293,12 +293,14 @@ async def support_from_order_handler(callback: CallbackQuery):
     user_id = callback.from_user.id
     pending_orders.pop(user_id, None)
     active_chats.add(user_id)
-    await callback.message.edit_text(
+    # answer вместо edit_text — после получения чека старое сообщение уже не inline
+    await callback.message.answer(
         "💬 Вы подключились к чату поддержки.\n\n"
-        "Опишите вашу проблему с оплатой, и наш оператор поможет вам.\n\n"
+        "Опишите вашу проблему, и наш оператор поможет вам.\n\n"
         "Мы работаем ежедневно и стараемся отвечать как можно быстрее 🕐",
         reply_markup=support_keyboard()
     )
+    await callback.answer()
     await bot.send_message(
         chat_id=ADMIN_ID,
         text=(
