@@ -57,6 +57,12 @@ def generate_order_number():
             return number
 
 
+def clear_user_state(user_id: int):
+    """Сбрасывает pending_orders и wholesale_state пользователя."""
+    pending_orders.pop(user_id, None)
+    wholesale_state.pop(user_id, None)
+
+
 # ─── Клавиатуры ────────────────────────────────────────────────────────────────
 
 def main_keyboard():
@@ -161,8 +167,7 @@ def support_keyboard():
 @dp.message(CommandStart())
 async def start(message: Message):
     user_id = message.from_user.id
-    pending_orders.pop(user_id, None)
-    wholesale_state.pop(user_id, None)
+    clear_user_state(user_id)
     active_chats.discard(user_id)
     await message.answer(
         "Выберите город, в котором хотите приобрести товар. 🌿🐈🧂",
@@ -174,6 +179,7 @@ async def start(message: Message):
 
 @dp.callback_query(F.data == "back_cities")
 async def back_to_cities(callback: CallbackQuery):
+    clear_user_state(callback.from_user.id)
     await callback.message.edit_text(
         "Выберите город, в котором хотите приобрести товар. 🌿🐈🧂",
         reply_markup=main_keyboard()
@@ -183,8 +189,12 @@ async def back_to_cities(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("back_products_"))
 async def back_to_products(callback: CallbackQuery):
+    clear_user_state(callback.from_user.id)
     city_i = int(callback.data.removeprefix("back_products_"))
-    city = city_index[city_i]
+    city = city_index.get(city_i)
+    if not city:
+        await callback.answer("Город не найден.", show_alert=True)
+        return
     await callback.message.edit_text(
         f"Вы выбрали: 📍 {city}\n\nТеперь выберите товар:",
         reply_markup=products_keyboard(city_i)
@@ -210,9 +220,10 @@ async def city_handler(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("p_"))
 async def product_handler(callback: CallbackQuery):
-    _, city_i_str, product_i_str = callback.data.split("_")
-    city_i = int(city_i_str)
-    product_i = int(product_i_str)
+    # split с maxsplit=2 чтобы правильно парсить при любых индексах
+    parts = callback.data.split("_", 2)
+    city_i = int(parts[1])
+    product_i = int(parts[2])
 
     city = city_index.get(city_i)
     if not city:
@@ -280,7 +291,6 @@ async def support_handler(callback: CallbackQuery):
 @dp.callback_query(F.data == "support_from_order")
 async def support_from_order_handler(callback: CallbackQuery):
     user_id = callback.from_user.id
-    # Удаляем pending_order чтобы пользователь мог свободно писать в поддержку
     pending_orders.pop(user_id, None)
     active_chats.add(user_id)
     await callback.message.edit_text(
@@ -305,6 +315,7 @@ async def support_from_order_handler(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "wholesale")
 async def wholesale_handler(callback: CallbackQuery):
+    wholesale_state.pop(callback.from_user.id, None)
     await callback.message.edit_text(
         "📦 Оптовая покупка\n\n"
         "Выберите ваш регион:",
@@ -317,6 +328,7 @@ async def wholesale_handler(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("ws_city_"))
 async def wholesale_city_handler(callback: CallbackQuery):
+    wholesale_state.pop(callback.from_user.id, None)
     city_i = int(callback.data.removeprefix("ws_city_"))
     city = city_index.get(city_i)
     if not city:
@@ -437,12 +449,12 @@ async def wholesale_custom_handler(callback: CallbackQuery):
 
 # ─── Текстовые сообщения пользователей ────────────────────────────────────────
 
-@dp.message(F.chat.id != ADMIN_ID)
+@dp.message(F.text & (F.chat.id != ADMIN_ID))
 async def user_message_handler(message: Message):
     user_id = message.from_user.id
 
     # 1. Ввод граммов для опта
-    if user_id in wholesale_state and message.text:
+    if user_id in wholesale_state:
         state = wholesale_state[user_id]
         try:
             grams = int(message.text.strip())
@@ -494,7 +506,7 @@ async def user_message_handler(message: Message):
     if user_id not in active_chats:
         return
 
-    text = message.text or message.caption or ""
+    text = message.text or ""
     forwarded = await bot.send_message(
         chat_id=ADMIN_ID,
         text=f"💬 {message.from_user.full_name} (@{message.from_user.username or 'без username'}, ID: {user_id}):\n\n{text}"
@@ -552,10 +564,11 @@ async def photo_handler(message: Message):
         sent = await bot.send_photo(
             chat_id=ADMIN_ID,
             photo=message.photo[-1].file_id,
-            caption=f"📸 Фото от {message.from_user.full_name} (ID: {user_id})"
+            caption=f"📸 Фото от {message.from_user.full_name} (@{message.from_user.username or 'без username'}, ID: {user_id})"
         )
         user_to_admin_message[user_id] = sent.message_id
         admin_message_to_user[sent.message_id] = user_id
+        await message.answer("📨 Фото отправлено оператору.")
 
     else:
         await message.answer("Сначала выберите товар через /start")
@@ -610,10 +623,11 @@ async def document_handler(message: Message):
         sent = await bot.send_document(
             chat_id=ADMIN_ID,
             document=message.document.file_id,
-            caption=f"📄 Документ от {message.from_user.full_name} (ID: {user_id})"
+            caption=f"📄 Документ от {message.from_user.full_name} (@{message.from_user.username or 'без username'}, ID: {user_id})"
         )
         user_to_admin_message[user_id] = sent.message_id
         admin_message_to_user[sent.message_id] = user_id
+        await message.answer("📨 Документ отправлен оператору.")
 
     else:
         await message.answer("Сначала выберите товар через /start")
@@ -649,7 +663,7 @@ async def admin_reply_handler(message: Message):
         else:
             await bot.send_message(
                 chat_id=user_id,
-                text=f"💬 Продавец:\n\n{message.text}"
+                text=f"💬 Продавец:\n\n{message.text or ''}"
             )
         await message.answer("✅ Отправлено")
     except Exception as e:
