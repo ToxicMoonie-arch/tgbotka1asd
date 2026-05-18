@@ -179,12 +179,14 @@ async def start(message: Message):
 
 @dp.callback_query(F.data == "back_cities")
 async def back_to_cities(callback: CallbackQuery):
-    clear_user_state(callback.from_user.id)
-    await callback.message.edit_text(
+    user_id = callback.from_user.id
+    clear_user_state(user_id)
+    active_chats.discard(user_id)
+    await callback.answer()
+    await callback.message.answer(
         "Выберите город, в котором хотите приобрести товар. 🌿🐈🧂",
         reply_markup=main_keyboard()
     )
-    await callback.answer()
 
 
 @dp.callback_query(F.data.startswith("back_products_"))
@@ -268,7 +270,8 @@ async def product_handler(callback: CallbackQuery):
 async def support_handler(callback: CallbackQuery):
     user_id = callback.from_user.id
     active_chats.add(user_id)
-    await callback.message.edit_text(
+    await callback.answer()
+    await callback.message.answer(
         "💬 Вы подключились к чату поддержки.\n\n"
         "Напишите ваш вопрос, и наш оператор ответит вам в ближайшее время.\n\n"
         "Мы работаем ежедневно и стараемся отвечать как можно быстрее 🕐",
@@ -283,7 +286,6 @@ async def support_handler(callback: CallbackQuery):
             f"Пользователь ожидает ответа. Отвечайте reply на его сообщения."
         )
     )
-    await callback.answer()
 
 
 # ─── Поддержка прямо со страницы оплаты ───────────────────────────────────────
