@@ -13,38 +13,32 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 cities = {
-    "Белгород": {"🧂Соли PVP 1г": 5600, "🧂Соли PVP 0.5г": 2950, "💠Мяу(Кристалл/Мука) 1г": 3025, "💠Мяу(Кристалл/Мука) 0.5г": 1675,
-                 "🌿Бошки 2г": 8100, "🌿Бошки 5г": 17450, "🪴Гаш 1г": 4575, "🪴Гаш 2г": 8450},
-    "Москва":   {"🧂Соли PVP 1г": 5450, "🧂Соли PVP 0.5г": 3075, "💠Мяу(Кристалл/Мука) 1г": 2900, "💠Мяу(Кристалл/Мука) 0.5г": 1700,
-                 "🌿Бошки 2г": 7950, "🌿Бошки 5г": 17600, "🪴Гаш 1г": 4450, "🪴Гаш 2г": 8575},
-    "Лобня":    {"🧂Соли PVP 1г": 5575, "🧂Соли PVP 0.5г": 3000, "💠Мяу(Кристалл/Мука) 1г": 3050, "💠Мяу(Кристалл/Мука) 0.5г": 1550,
-                 "🌿Бошки 2г": 8175, "🌿Бошки 5г": 17575, "🪴Гаш 1г": 4600, "🪴Гаш 2г": 8500},
-    "СПБ":      {"🧂Соли PVP 1г": 5500, "🧂Соли PVP 0.5г": 2950, "💠Мяу(Кристалл/Мука) 1г": 2975, "💠Мяу(Кристалл/Мука) 0.5г": 1650,
-                 "🌿Бошки 2г": 8050, "🌿Бошки 5г": 17425, "🪴Гаш 1г": 4525, "🪴Гаш 2г": 8425},
-    "Екб":      {"🧂Соли PVP 1г": 5650, "🧂Соли PVP 0.5г": 3050, "💠Мяу(Кристалл/Мука) 1г": 2875, "💠Мяу(Кристалл/Мука) 0.5г": 1575,
-                 "🌿Бошки 2г": 7925, "🌿Бошки 5г": 17650, "🪴Гаш 1г": 4475, "🪴Гаш 2г": 8600},
-    "ДНР":      {"🧂Соли PVP 1г": 5425, "🧂Соли PVP 0.5г": 2900, "💠Мяу(Кристалл/Мука) 1г": 3000, "💠Мяу(Кристалл/Мука) 0.5г": 1675,
-                 "🌿Бошки 2г": 8125, "🌿Бошки 5г": 17375, "🪴Гаш 1г": 4550, "🪴Гаш 2г": 8475},
-    "Краснодар":{"🧂Соли PVP 1г": 5525, "🧂Соли PVP 0.5г": 3025, "💠Мяу(Кристалл/Мука) 1г": 2925, "💠Мяу(Кристалл/Мука) 0.5г": 1625,
-                 "🌿Бошки 2г": 8000, "🌿Бошки 5г": 17550, "🪴Гаш 1г": 4625, "🪴Гаш 2г": 8550},
-    "Мурманск": {"🧂Соли PVP 1г": 5475, "🧂Соли PVP 0.5г": 2975, "💠Мяу(Кристалл/Мука) 1г": 3075, "💠Мяу(Кристалл/Мука) 0.5г": 1725,
-                 "🌿Бошки 2г": 8075, "🌿Бошки 5г": 17475, "🪴Гаш 1г": 4500, "🪴Гаш 2г": 8525},
+    "Белгород": {"Товар 1": 5600, "Товар 2г": 2950, "Товар 3": 3025, "Товар 4": 1675,
+                 "Товар 5": 8100, "Товар 6": 17450, "Товар 7": 4575, "Товар 8": 8450},
+    "Москва":   {"Товар 1": 5450, "Товар 2г": 3075, "Товар 3": 2900, "Товар 4": 1700,
+                 "Товар 5": 7950, "Товар 6": 17600, "Товар 7": 4450, "Товар 8": 8575},
+    "Лобня":    {"Товар 1": 5575, "Товар 2г": 3000, "Товар 3": 3050, "Товар 4": 1550,
+                 "Товар 5": 8175, "Товар 6": 17575, "Товар 7": 4600, "Товар 8": 8500},
+    "СПБ":      {"Товар 1": 5500, "Товар 2г": 2950, "Товар 3": 2975, "Товар 4": 1650,
+                 "Товар 5": 8050, "Товар 6": 17425, "Товар 7": 4525, "Товар 8": 8425},
+    "Екб":      {"Товар 1": 5650, "Товар 2г": 3050, "Товар 3": 2875, "Товар 4": 1575,
+                 "Товар 5": 7925, "Товар 6": 17650, "Товар 7": 4475, "Товар 8": 8600},
+    "ДНР":      {"Товар 1": 5425, "Товар 2г": 2900, "Товар 3": 3000, "Товар 4": 1675,
+                 "Товар 5": 8125, "Товар 6": 17375, "Товар 7": 4550, "Товар 8": 8475},
+    "Краснодар":{"Товар 1": 5525, "Товар 2г": 3025, "Товар 3": 2925, "Товар 4": 1625,
+                 "Товар 5": 8000, "Товар 6": 17550, "Товар 7": 4625, "Товар 8": 8550},
+    "Мурманск": {"Товар 1": 5475, "Товар 2г": 2975, "Товар 3": 3075, "Товар 4": 1725,
+                 "Товар 5": 8075, "Товар 6": 17475, "Товар 7": 4500, "Товар 8": 8525},
 }
 
-# Оптовые типы товаров:
-# 🧂Соли PVP = Товар 1 (1г) + 🧂Соли PVP 0.5г (0.5г) → цена с Товара 1 → 5500 ₽/г
-# 💠Мяу(Кристалл/Мука) = 💠Мяу(Кристалл/Мука) 1г (1г) + 💠Мяу(Кристалл/Мука) 0.5г (0.5г) → цена с Товара 3 → 3000 ₽/г
-# 🪴Гаш = 🌿Бошки 2г (2г) + 🌿Бошки 5г (5г)   → среднее (4025+3500)/2 = 3762 ₽/г
-# 🌿Бошки = 🪴Гаш 1г (1г) + 🪴Гаш 2г (2г)   → среднее (4550+4250)/2 = 4400 ₽/г
 wholesale_types = {
-    "🧂Соли PVP": 5500,
-    "💠Мяу(Кристалл/Мука)": 3000,
-    "🪴Гаш": round((8050/2 + 17500/5) / 2),   # среднее по граммам
-    "🌿Бошки": round((4550/1 + 8500/2) / 2),     # среднее по граммам
+    "Товар10": 5500,
+    "Товар11": 3000,
+    "Товар13": round((8050/2 + 17500/5) / 2),
+    "Товар12": round((4550/1 + 8500/2) / 2),
 }
 
 wholesale_index = {i: name for i, name in enumerate(wholesale_types)}
-
 city_index = {i: city for i, city in enumerate(cities)}
 
 pending_orders = {}
@@ -52,7 +46,7 @@ user_to_admin_message = {}
 admin_message_to_user = {}
 active_chats = set()
 used_order_numbers = set()
-wholesale_state = {}  # user_id -> dict для ввода своего кол-ва
+wholesale_state = {}
 
 
 def generate_order_number():
@@ -93,6 +87,7 @@ def products_keyboard(city_i: int):
 def payment_keyboard(city_i: int):
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [InlineKeyboardButton(text="💬 Написать в поддержку", callback_data="support_from_order")],
             [InlineKeyboardButton(text="◀️ Назад к товарам", callback_data=f"back_products_{city_i}")]
         ]
     )
@@ -120,7 +115,6 @@ def wholesale_products_keyboard(city_i: int):
 
 
 def wholesale_amounts_keyboard(city_i: int, product_i: int):
-    """Кнопки 1–10г, по 5 в ряд."""
     options = list(range(1, 11))
     rows = []
     row = []
@@ -148,6 +142,7 @@ def wholesale_amounts_keyboard(city_i: int, product_i: int):
 def wholesale_payment_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [InlineKeyboardButton(text="💬 Написать в поддержку", callback_data="support_from_order")],
             [InlineKeyboardButton(text="◀️ Назад к опту", callback_data="wholesale")]
         ]
     )
@@ -165,6 +160,10 @@ def support_keyboard():
 
 @dp.message(CommandStart())
 async def start(message: Message):
+    user_id = message.from_user.id
+    pending_orders.pop(user_id, None)
+    wholesale_state.pop(user_id, None)
+    active_chats.discard(user_id)
     await message.answer(
         "Выберите город, в котором хотите приобрести товар. 🌿🐈🧂",
         reply_markup=main_keyboard()
@@ -271,6 +270,32 @@ async def support_handler(callback: CallbackQuery):
             f"👤 {callback.from_user.full_name} (@{callback.from_user.username or 'без username'})\n"
             f"🆔 ID: {user_id}\n\n"
             f"Пользователь ожидает ответа. Отвечайте reply на его сообщения."
+        )
+    )
+    await callback.answer()
+
+
+# ─── Поддержка прямо со страницы оплаты ───────────────────────────────────────
+
+@dp.callback_query(F.data == "support_from_order")
+async def support_from_order_handler(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    # Удаляем pending_order чтобы пользователь мог свободно писать в поддержку
+    pending_orders.pop(user_id, None)
+    active_chats.add(user_id)
+    await callback.message.edit_text(
+        "💬 Вы подключились к чату поддержки.\n\n"
+        "Опишите вашу проблему с оплатой, и наш оператор поможет вам.\n\n"
+        "Мы работаем ежедневно и стараемся отвечать как можно быстрее 🕐",
+        reply_markup=support_keyboard()
+    )
+    await bot.send_message(
+        chat_id=ADMIN_ID,
+        text=(
+            f"🆕 Запрос в поддержку со страницы оплаты!\n"
+            f"👤 {callback.from_user.full_name} (@{callback.from_user.username or 'без username'})\n"
+            f"🆔 ID: {user_id}\n\n"
+            f"У пользователя проблема с оплатой. Отвечайте reply на его сообщения."
         )
     )
     await callback.answer()
@@ -416,6 +441,7 @@ async def wholesale_custom_handler(callback: CallbackQuery):
 async def user_message_handler(message: Message):
     user_id = message.from_user.id
 
+    # 1. Ввод граммов для опта
     if user_id in wholesale_state and message.text:
         state = wholesale_state[user_id]
         try:
@@ -457,6 +483,14 @@ async def user_message_handler(message: Message):
             await message.answer("❌ Введите целое число (например: 15):")
         return
 
+    # 2. Ожидаем чек — не пересылаем в поддержку
+    if user_id in pending_orders:
+        await message.answer(
+            "📎 Пожалуйста, пришлите скриншот или PDF чека для подтверждения оплаты."
+        )
+        return
+
+    # 3. Чат поддержки
     if user_id not in active_chats:
         return
 
