@@ -7,7 +7,7 @@ from aiogram import F
 import random
 
 TOKEN = "8094622496:AAG6UnfKNMxx39MpLhw7yqCJOtcq75lZNrU"
-ADMIN_ID = [8586842368, 8091903185]
+ADMIN_ID = 8091903185
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
