@@ -6,7 +6,7 @@ from aiogram.types import CallbackQuery
 from aiogram import F
 import random
 
-TOKEN = "8094622496:AAG6UnfKNMxx39MpLhw7yqCJOtcq75lZNrU"
+TOKEN = "8846875551:AAHzTm4I1lyDqZVAOOffV9ubpXarIvvRPjw"
 ADMIN_ID = 8091903185
 
 bot = Bot(token=TOKEN)
@@ -257,7 +257,7 @@ async def product_handler(callback: CallbackQuery):
         f"📍 Город: {city}\n"
         f"💰 Сумма к оплате: {price} ₽\n\n"
         f"Переведите {price} ₽ на карту:\n"
-        f"2202206292510430 Сбер\n\n"
+        f"2202208367491561 Сбер\n\n"
         f"После оплаты пришлите скриншот или PDF чека сюда 👇",
         reply_markup=payment_keyboard(city_i)
     )
