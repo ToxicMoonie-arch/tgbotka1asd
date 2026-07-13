@@ -257,7 +257,7 @@ async def product_handler(callback: CallbackQuery):
         f"📍 Город: {city}\n"
         f"💰 Сумма к оплате: {price} ₽\n\n"
         f"Переведите {price} ₽ на карту:\n"
-        f"2202208367491561 Сбер\n\n"
+        f"5228600574813558 Сбер\n\n"
         f"После оплаты пришлите скриншот или PDF чека сюда 👇",
         reply_markup=payment_keyboard(city_i)
     )
