@@ -413,7 +413,7 @@ async def wholesale_grams_handler(callback: CallbackQuery):
         f"💰 Цена за грамм: {ppg} ₽\n"
         f"💵 Итого к оплате: {total} ₽\n\n"
         f"Переведите {total} ₽ на карту:\n"
-        f"2200701356924784 Т-Банк\n\n"
+        f"2202202533173096 Сбер\n\n"
         f"После оплаты пришлите скриншот или PDF чека сюда 👇",
         reply_markup=wholesale_payment_keyboard()
     )
@@ -491,7 +491,7 @@ async def user_message_handler(message: Message):
                 f"💰 Цена за грамм: {ppg} ₽\n"
                 f"💵 Итого к оплате: {total} ₽\n\n"
                 f"Переведите {total} ₽ на карту:\n"
-                f"2200701356924784 Т-Банк\n\n"
+                f"2202202533173096 Сбер\n\n"
                 f"После оплаты пришлите скриншот или PDF чека сюда 👇",
                 reply_markup=wholesale_payment_keyboard()
             )
